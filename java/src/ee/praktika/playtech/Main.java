@@ -4,6 +4,6 @@ public class Main {
 
     public static void main(String[] args) {
         Analyzer analyzer = new Analyzer();
-        analyzer.AnalyzeGameData("game_data_2.txt");
+        analyzer.analyzeGameData("game_data_2.txt");
     }
 }

@@ -11,15 +11,26 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Class Analyzer
+ */
 public class Analyzer {
 
+    private static final Integer DEALER_HAND_VALUE_TO_HIT_FROM = 17;
+    private static final Integer MAX_VALUE_TO_WIN_GAME = 21;
+    private static final Integer ILLEGAL_TO_HIT = 20;
+    private static final Integer OWNS_ILLEGAL_CARD = -1;
+
+
     private InputFilesBufferReader inputFilesBufferReader;
-    private String filename = "game_data_1";
     private GameMoveSorter gameMoveSorter;
     private Map<Integer, Game> games;
     private OutputFilesWriter outputFilesWriter;
     private List<GameMove> faultyGames;
 
+    /**
+     * Constructor for analyzer
+     */
     public Analyzer() {
         this.inputFilesBufferReader = new InputFilesBufferReader();
         this.gameMoveSorter = new GameMoveSorter();
@@ -27,92 +38,100 @@ public class Analyzer {
         this.faultyGames = new ArrayList<>();
     }
 
-    // D Hit, P Lose, P Stand, P Joined, P Win, P Hit, D redeal,
-    public void AnalyzeGameData(String filename) {
+    /**
+     * reads every single game and looks for faulty games, writes them into lists
+     * @param filename to analyze all game data from
+     */
+    public void analyzeGameData(String filename) {
         this.games = inputFilesBufferReader.readTextFromFile(filename);
         for (Game game:games.values()) {
-            for (GameMove gameMove:game.getListOfGameMoves()) {
-                if (gameMove.getMoveType().equals("P Joined")) {
-                    if (!checkAfterJoined(gameMove)) {
-                        faultyGames.add(gameMove);
-                        break;
-                    }
-                }
-                if (gameMove.getMoveType().equals("P Hit")) {
-                    if (!checkAfterPlayerHit(gameMove)) {
-                        faultyGames.add(gameMove);
-                        break;
-                    }
-                }
-                if (gameMove.getMoveType().equals("D Redeal")) {
-                    if (!checkAfterJoined(gameMove)) {
-                        faultyGames.add(gameMove);
-                        break;
-                    }
-                }
-                if (gameMove.getMoveType().equals("D Hit")) {
-                    if (!checkAfterDealerHit(gameMove)) {
-                        faultyGames.add(gameMove);
-                        break;
-                    }
-                }
-                if (gameMove.getMoveType().equals("P Lose")) {
-                    if (!checkAfterPLose(gameMove)) {
-                        faultyGames.add(gameMove);
-                        break;
-                    }
-                }
-                if (gameMove.getMoveType().equals("P Win")) {
-                    if (!checkAfterPWin(gameMove)) {
-                        faultyGames.add(gameMove);
-                        break;
-                    }
-                }
-                if (gameMove.getMoveType().equals("P Stand")) {
-                    if (!checkAfterStand(gameMove)) {
-                        faultyGames.add(gameMove);
-                        break;
-                    }
-                }
-            }
+            analyzeGameMoves(game);
         }
         gameMoveSorter.sortByGameID(faultyGames);
         outputFilesWriter.writeListIntoFile(faultyGames);
     }
 
-    public boolean checkAfterPWin(GameMove gamemove) {
+    private void analyzeGameMoves(Game game) {
+        for (GameMove gameMove:game.getListOfGameMoves()) {
+            //TODO: use switch case and use Enums instead of strings and ifs
+            if (gameMove.getMoveType().equals("P Joined")) {
+                if (!checkAfterJoined(gameMove)) {
+                    faultyGames.add(gameMove);
+                    break;
+                }
+            }
+            if (gameMove.getMoveType().equals("P Hit")) {
+                if (!checkAfterPlayerHit(gameMove)) {
+                    faultyGames.add(gameMove);
+                    break;
+                }
+            }
+            if (gameMove.getMoveType().equals("D Redeal")) {
+                if (!checkAfterJoined(gameMove)) {
+                    faultyGames.add(gameMove);
+                    break;
+                }
+            }
+            if (gameMove.getMoveType().equals("D Hit")) {
+                if (!checkAfterDealerHit(gameMove)) {
+                    faultyGames.add(gameMove);
+                    break;
+                }
+            }
+            if (gameMove.getMoveType().equals("P Lose")) {
+                if (!checkAfterPLose(gameMove)) {
+                    faultyGames.add(gameMove);
+                    break;
+                }
+            }
+            if (gameMove.getMoveType().equals("P Win")) {
+                if (!checkAfterPWin(gameMove)) {
+                    faultyGames.add(gameMove);
+                    break;
+                }
+            }
+            if (gameMove.getMoveType().equals("P Stand")) {
+                if (!checkAfterStand(gameMove)) {
+                    faultyGames.add(gameMove);
+                    break;
+                }
+            }
+        }
+    }
+
+    private boolean checkAfterPWin(GameMove gamemove) {
         int dealerHandValue = gamemove.dealerHandValue;
         int playerHandValue = gamemove.playerHandValue;
-        if (dealerHandValue < 17) {
+        if (dealerHandValue < DEALER_HAND_VALUE_TO_HIT_FROM) {
             return false;
         }
         for (String playerCard:gamemove.getPlayerCards()) {
             for (String dealerCard:gamemove.getDealerCards()) {
-                if (playerCard.equals(dealerCard)) {
+                if (playerCard.equalsIgnoreCase(dealerCard)) {
                     return false;
                 }
             }
         }
-        return dealerHandValue <= playerHandValue && playerHandValue < 21;
+        return dealerHandValue <= playerHandValue && playerHandValue < MAX_VALUE_TO_WIN_GAME;
     }
 
-    public boolean checkAfterPLose(GameMove gamemove) {
+    private boolean checkAfterPLose(GameMove gamemove) {
         int dealerHandValue = gamemove.dealerHandValue;
         int playerHandValue = gamemove.playerHandValue;
-        return playerHandValue <= 21 && dealerHandValue <= 21 && dealerHandValue > playerHandValue;
+        return playerHandValue <= MAX_VALUE_TO_WIN_GAME && dealerHandValue <= MAX_VALUE_TO_WIN_GAME && dealerHandValue > playerHandValue;
     }
 
-    public boolean checkAfterPlayerHit(GameMove gamemove) {
+    private boolean checkAfterPlayerHit(GameMove gamemove) {
         int playerHandValue = gamemove.playerHandValue;
-        return playerHandValue < 20;
+        return playerHandValue < ILLEGAL_TO_HIT;
     }
 
-    public boolean checkAfterDealerHit(GameMove gamemove) {
+    private boolean checkAfterDealerHit(GameMove gamemove) {
         int dealerHandValue = gamemove.dealerHandValue;
-        return dealerHandValue < 17;
+        return dealerHandValue < DEALER_HAND_VALUE_TO_HIT_FROM;
     }
 
-    public boolean checkAfterJoined(GameMove gamemove) {
+    private boolean checkAfterJoined(GameMove gamemove) {
         int hidden = 0;
         for (String card:gamemove.getDealerCards()) {
             if (card.length() > 2 && (Integer.parseInt(String.valueOf(card.charAt(0))) > 1 || Integer.parseInt(String.valueOf(card.charAt(1))) > 1)) {
@@ -136,9 +155,9 @@ public class Analyzer {
         return true;
     }
 
-    public boolean checkAfterStand(GameMove gameMove) {
+    private boolean checkAfterStand(GameMove gameMove) {
         int playerHandValue = gameMove.playerHandValue;
-        if (playerHandValue > 21 || playerHandValue == -1) { // >= 21 ??
+        if (playerHandValue > MAX_VALUE_TO_WIN_GAME || playerHandValue == OWNS_ILLEGAL_CARD) { // >= 21 ??
             return false;
         }
 

@@ -12,6 +12,11 @@ import java.util.List;
 public class OutputFilesWriterImpl implements OutputFilesWriter {
 
 
+    /**
+     *
+     * @param gameMoves that are defects to be written into list
+     * @return whether writing was successful or not
+     */
     @Override
     public boolean writeListIntoFile(List<GameMove> gameMoves) {
         Path path = Path.of("analyzer_results.txt");
