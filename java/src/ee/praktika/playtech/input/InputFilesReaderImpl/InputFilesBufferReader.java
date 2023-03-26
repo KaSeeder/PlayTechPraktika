@@ -6,6 +6,7 @@ import ee.praktika.playtech.model.Game;
 import ee.praktika.playtech.model.GameMove;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -24,7 +25,7 @@ public class InputFilesBufferReader implements InputFilesReader {
      */
     @Override
     public Map<Integer, Game> readTextFromFile(String filename) {
-        Path path = Path.of("resources/" + filename);
+        Path path = Path.of("resources" + File.separator + filename);
 
         Map<Integer, Game> games = new HashMap<>(); // key value, Integer is gameNum
         try (BufferedReader reader = Files.newBufferedReader(path)) {
